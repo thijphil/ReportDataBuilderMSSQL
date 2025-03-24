@@ -1,4 +1,5 @@
 ﻿using MySql.Data.MySqlClient;
+using ReportDataBuilder.StringOperations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +12,7 @@ namespace ReportDataBuilder.SimpleLogging
     {
         public void Init()
         {
+            Console.SetOut(new CustomTextWriter(Console.Out));
             CheckOrCreateTableExists();
         }
 

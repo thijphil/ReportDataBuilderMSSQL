@@ -10,7 +10,6 @@ namespace ReportDataBuilder.Controllers
 
         public override async Task BuildDataAsync()
         {
-            Console.SetOut(new CustomTextWriter(Console.Out));
             string ReceivingDatabaseName = _databaseSettings["ReceivingDatabaseName"] ?? "";
             string connectionString = _databaseSettings["ConnectionString"] ?? "";
             List<string> selectedDatabases = _databaseSettings.GetSection("SelectedDatabases").Get<List<string>>() ?? [];
