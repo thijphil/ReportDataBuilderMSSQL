@@ -1,4 +1,5 @@
 ﻿using MySql.Data.MySqlClient;
+using static Mysqlx.Notice.Warning.Types;
 
 namespace ReportDataBuilder.SimpleLogging.Repositories
 {
@@ -52,6 +53,7 @@ namespace ReportDataBuilder.SimpleLogging.Repositories
         }
         public override long LogStartTime(string Office, int Token)
         {
+            
             using MySqlConnection connection = new(ConnectionString);
             string LogCommand = QueryBuilder.InsertTimeLog(
                ApplicationName,
@@ -60,16 +62,18 @@ namespace ReportDataBuilder.SimpleLogging.Repositories
             MySqlCommand command = new(LogCommand, connection);
             connection.Open();
             command.ExecuteNonQuery();
+            Console.WriteLine($"Start ID: {command.LastInsertedId}; Office: {Office}; Token: {Token}; {DateTime.Now}");
             return command.LastInsertedId;
         }
 
         public override long LogStopTime(long id)
-        {
+        {            
             using MySqlConnection connection = new(ConnectionString);
             string LogCommand = QueryBuilder.UpdateTimeLog(id);
             MySqlCommand command = new(LogCommand, connection);
             connection.Open();
             command.ExecuteNonQuery();
+            Console.WriteLine($"Stop ID: {id}; {DateTime.Now}");
             return command.LastInsertedId;
         }
     }

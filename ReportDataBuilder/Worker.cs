@@ -1,9 +1,8 @@
-
 using ReportDataBuilder.Controllers;
 
 namespace ReportDataBuilder
 {
-    public class Worker(MssqlController mssqlController) : BackgroundService
+    public class Worker(BuildDataController mssqlController) : BackgroundService
     {
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {

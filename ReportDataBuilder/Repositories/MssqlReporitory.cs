@@ -1,35 +1,17 @@
 ﻿using Microsoft.Data.SqlClient;
-using MySql.Data.MySqlClient;
 using ReportDataBuilder.objects;
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using ILogger = ReportDataBuilder.SimpleLogging.Logger.ILogger;
 
 namespace ReportDataBuilder.Repositories
 {
     public class MssqlReporitory : Repository
     {
-        public override async Task<List<string>> GetDatabasesAsync(string connectionstring)
+        public MssqlReporitory(ILogger logger)
         {
-            using SqlConnection connection = new(connectionstring);
-            await connection.OpenAsync();
-            string query = "SELECT name FROM sys.databases;";
-            using SqlCommand command = new(query, connection);
-            using SqlDataReader reader = await command.ExecuteReaderAsync();
-            List<string> Returnable = [];
-            while (reader.Read())
-            {
-                Console.WriteLine($"{reader["name"]}");
-                if (reader["name"] != null)
-                    Returnable.Add(reader["name"].ToString() ?? "");
-            }
-            return Returnable;
+            this.Logger = logger;
         }
 
-        public override async Task<List<string>> GetNamesAsync(string connectionstring, string query, string column)
+        public override async Task<List<string>> GetColumnNamesAsync(string connectionstring, string query, string column)
         {
             using SqlConnection connection = new(connectionstring);
             await connection.OpenAsync();
@@ -38,7 +20,6 @@ namespace ReportDataBuilder.Repositories
             List<string> Returnable = [];
             while (reader.Read())
             {
-                Console.WriteLine($"{reader[column]}");
                 if (reader[column] != null)
                     Returnable.Add(reader[column].ToString() ?? "");
             }
@@ -55,14 +36,12 @@ namespace ReportDataBuilder.Repositories
             List<ViewObject> objects = [];
             while (reader.Read())
             {
-                // Access your columns here, for example:
                 ViewObject vo = new();
                 foreach (var col in columnNames)
                 {
                     vo.paras.Add(col, new ParamValue(reader.GetFieldType(reader.GetOrdinal(col)).ToString(), reader.GetValue(reader.GetOrdinal(col)).ToString() ?? ""));
                 }
                 objects.Add(vo);
-                // Add more columns as needed
             }
             return objects;
         }

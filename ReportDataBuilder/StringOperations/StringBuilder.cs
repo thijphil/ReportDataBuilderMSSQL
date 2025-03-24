@@ -83,14 +83,5 @@ namespace ReportDataBuilder.StringOperations
             columns += " ";
             return columns;
         }
-        public static string CreateTableName(string name)
-        {
-            //var vn = name.Split("_").ToList();
-            //var tablename = vn[vn.Count - 1];
-            //var tablename = name.Replace("_","");
-            //tablename = name.Replace("_","");
-            //tablename = name.Replace("_","");
-            return name;
-        }
     }
 }

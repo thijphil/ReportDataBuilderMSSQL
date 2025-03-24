@@ -2,41 +2,30 @@
 using ReportDataBuilder.objects;
 using System.Data;
 using StringBuilder = ReportDataBuilder.StringOperations.StringBuilder;
+using ILogger = ReportDataBuilder.SimpleLogging.Logger.ILogger;
 
 namespace ReportDataBuilder.Repositories
 {
     public abstract class Repository : IRepository
     {
-
-        public abstract Task<List<string>> GetDatabasesAsync(string connectionstring);
-        public abstract Task<List<string>> GetNamesAsync(string connectionstring, string query, string column);
+        public required ILogger Logger { get; set; }
+        public abstract Task<List<string>> GetColumnNamesAsync(string connectionstring, string query, string column);
         public abstract Task<List<ViewObject>> ReadDataAsync(string connectionstring, string query, List<string> columnNames, DateTime? lastdate);
-        
-        public async Task<bool> CheckTableExistsAsync(string connectionstring, string tableName, string dbName)
+        public async Task<List<string>> GetExsistingTables(string ConnectionString) 
         {
-            string query = "SELECT count(*) as amount " +
-                "FROM information_schema.TABLES " +
-                $"WHERE (TABLE_SCHEMA = '{dbName}') " +
-                $"AND (TABLE_NAME = '{tableName}')";
-            using MySqlConnection connection = new(connectionstring);
-            try
+            List<string> tableNames = [];
+            using MySqlConnection connection = new(ConnectionString);
+            await connection.OpenAsync();
+            string query = "SHOW TABLES";
+            MySqlCommand command = new(query, connection);
+
+            using MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync();
+            while (reader.Read())
             {
-                connection.Open();
-                MySqlCommand command = new(query, connection);
-                using MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync();
-                while (await reader.ReadAsync())
-                {
-                    int amount = reader.GetInt32("amount");
-                    return amount > 0;
-                }
+                tableNames.Add(reader.GetString(0));
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Error: " + ex.Message);
-                if (ex.StackTrace != null)
-                    Console.WriteLine(ex.StackTrace);
-            }
-            return false;
+            
+            return tableNames;
         }
         public async Task WriteDataAsync(string connectionstring, string tablename, List<ViewObject> objects)
         {
@@ -127,37 +116,19 @@ namespace ReportDataBuilder.Repositories
                                 break;
                         }
                     }
-                    // Execute the query
                     int rowsAffected = await command.ExecuteNonQueryAsync();
-
-                    // Check if any rows were affected
                     if (rowsAffected > 0)
                     {
-                        Console.WriteLine("Data inserted successfully!");
+                        Logger.LogInfo("Data inserted successfully!");
                     }
                     else
                     {
-                        Console.WriteLine("No data inserted!");
-                    }
-                }
-                catch (MySqlException ex)
-                {
-                    if (ex.Message.Contains("Duplicate entry"))
-                    {
-                        Console.WriteLine($"Error: {ex.Message} Table:{tablename}");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Error: {ex.Message} Table:{tablename}");
-                        if (ex.StackTrace != null)
-                            Console.WriteLine(ex.StackTrace);
+                        Logger.LogInfo("No data inserted!");
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error: {ex.Message} Table:{tablename}");
-                    if (ex.StackTrace != null)
-                        Console.WriteLine(ex.StackTrace);
+                    Logger.LogError($"Error: {ex.Message} Table:{tablename}");
                 }
             }
         }
@@ -170,13 +141,13 @@ namespace ReportDataBuilder.Repositories
                 MySqlCommand command = connection.CreateCommand();
                 command.CommandText = $"TRUNCATE TABLE {tablename}";
                 await command.ExecuteNonQueryAsync();
-                Console.WriteLine("Table truncated successfully.");
+                Logger.LogInfo("Table truncated successfully.");
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error: " + ex.Message);
+                Logger.LogError("Error: " + ex.Message);
                 if (ex.StackTrace != null)
-                    Console.WriteLine(ex.StackTrace);
+                    Logger.LogInfo(ex.StackTrace);
             }
         }
 
@@ -198,9 +169,8 @@ namespace ReportDataBuilder.Repositories
                         DateTime lastdate = reader.GetDateTime("CreatedDatetimeFilter");
                         return lastdate;
                     }
-                    catch (Exception ex)
+                    catch
                     {
-                        Console.WriteLine("Error: " + ex.Message);
                         if (string.IsNullOrEmpty(reader.GetValue("CreatedDatetimeFilter").ToString()))
                             return null;
                         string dateString = reader.GetString("CreatedDatetimeFilter");
@@ -211,7 +181,7 @@ namespace ReportDataBuilder.Repositories
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error: " + ex.Message);
+                Logger.LogError("Error: " + ex.Message);
             }
             return null;
         }
