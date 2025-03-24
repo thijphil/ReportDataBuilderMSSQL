@@ -1,5 +1,6 @@
 ﻿using ReportDataBuilder.Repositories;
 using ReportDataBuilder.StringOperations;
+using System.Security.AccessControl;
 using ILogger = ReportDataBuilder.SimpleLogging.Logger.ILogger;
 
 namespace ReportDataBuilder.Controllers
@@ -15,16 +16,25 @@ namespace ReportDataBuilder.Controllers
                 {
                     var viewColumnNameQuery = $"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '{objectName}' and TABLE_CATALOG = '{SendingDatabaseName}';";
                     var columnsNames = await Repository.GetColumnNamesAsync(SendingConnectionString, viewColumnNameQuery, "COLUMN_NAME");
-                    string FilterCol = HasFilter(columnsNames) ? "CreatedDatetimeFilter" : "CreatedDatetime";
+                    
                     Logger.LogInfo($"Fetching latest datetime from {objectName}");
-                    var lastDate = await Repository.GetLatestDateTimeAsync(ReceivingConnectionString, objectName, FilterCol);
+                    string CreatedFilterCol = HasCreatedFilter(columnsNames) ? "CreatedDatetimeFilter" : "CreatedDatetime";
+                    var CreatedLastDate = await Repository.GetLatestDateTimeAsync(ReceivingConnectionString, objectName, CreatedFilterCol);
+
                     Logger.LogInfo($"Creating Query");
-                    string colNames = StringBuilder.CreateColumnListMsSql(columnsNames);
-                    var readDataQuery = lastDate == null? $"select {colNames} from {objectName}" : $"select {colNames} from {objectName} where {FilterCol} > '{lastDate}'";
-                    Logger.LogInfo("Fetching data from view");
-                    var objects = await Repository.ReadDataAsync(SendingConnectionString, readDataQuery, columnsNames, lastDate);
-                    Logger.LogInfo("Writing data to table");
-                    await Repository.WriteDataAsync(ReceivingConnectionString, objectName, objects);
+                    string CreatedColNames = StringBuilder.CreateColumnListMsSql(columnsNames);
+                    var CreatedReadDataQuery = CreatedLastDate == null? $"select {CreatedColNames} from {objectName}" : $"select {CreatedColNames} from {objectName} where {CreatedFilterCol} > '{CreatedLastDate}'";
+                    await SyncCreatedRows(CreatedReadDataQuery, columnsNames, objectName);
+
+                    Logger.LogInfo($"Fetching latest datetime from {objectName}");
+                    string UpdatedFilterCol = HasCreatedFilter(columnsNames) ? "UpdateDatetimeFilter" : "UpdateDateTime";
+                    var UpdatedLastDate = DateTime.Now;
+
+                    Logger.LogInfo($"Creating Query");
+                    string UpdatedColNames = StringBuilder.CreateColumnListMsSql(columnsNames);
+                    var UpdatedReadDataQuery = $"select {UpdatedColNames} from {objectName} where {UpdatedFilterCol} > '{UpdatedLastDate}'";
+
+                    await SyncUpdatedRows(UpdatedReadDataQuery, columnsNames, objectName);
                     Logger.LogStop(id);
                 }
                 catch (Exception ex)
@@ -34,6 +44,21 @@ namespace ReportDataBuilder.Controllers
                 }
             }           
             Environment.Exit(0);
-        }        
+        }
+
+        private async Task SyncCreatedRows(string ReadDataQuery, List<string> ColumnsNames, string ObjectName) 
+        {
+            Logger.LogInfo("Fetching data from view");
+            var objects = await Repository.ReadDataAsync(SendingConnectionString, ReadDataQuery, ColumnsNames);
+            Logger.LogInfo("Writing data to table");
+            await Repository.WriteDataAsync(ReceivingConnectionString, ObjectName, objects);
+        }
+        private async Task SyncUpdatedRows(string ReadDataQuery, List<string> ColumnsNames, string ObjectName)
+        {
+            Logger.LogInfo("Fetching data from view");
+            var objects = await Repository.ReadDataAsync(SendingConnectionString, ReadDataQuery, ColumnsNames);
+            Logger.LogInfo("Writing data to table");
+            await Repository.WriteDataAsync(ReceivingConnectionString, ObjectName, objects);
+        }
     }
 }

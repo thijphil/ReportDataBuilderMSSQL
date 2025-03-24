@@ -23,6 +23,7 @@ namespace ReportDataBuilder.Controllers
             SendingConnectionString = $"{DatabaseSettings["SendingConnectionString"]}Database={SendingDatabaseName};";
         }
         public abstract Task BuildDataAsync();
-        public static bool HasFilter(List<string> columnNames) => columnNames.Contains("CreatedDatetimeFilter");
+        public static bool HasCreatedFilter(List<string> columnNames) => columnNames.Contains("CreatedDatetimeFilter");
+        public static bool HasUpdatedFilter(List<string> columnNames) => columnNames.Contains("UpdateDatetimeFilter");
     }
 }

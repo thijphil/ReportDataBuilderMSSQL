@@ -9,7 +9,7 @@ namespace ReportDataBuilder.Repositories
 {
     public interface IRepository
     {
-        Task<List<ViewObject>> ReadDataAsync(string connectionstring, string query, List<string> columnNames, DateTime? lastdate);
+        Task<List<ViewObject>> ReadDataAsync(string connectionstring, string query, List<string> columnNames);
         Task<List<string>> GetColumnNamesAsync(string connectionstring, string query, string column);
         Task WriteDataAsync(string connectionstring, string tablename, List<ViewObject> objects);
         Task TruncateDataAsync(string connectionstring, string tablename);

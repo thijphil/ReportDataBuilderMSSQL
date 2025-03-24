@@ -10,7 +10,7 @@ namespace ReportDataBuilder.Repositories
     {
         public required ILogger Logger { get; set; }
         public abstract Task<List<string>> GetColumnNamesAsync(string connectionstring, string query, string column);
-        public abstract Task<List<ViewObject>> ReadDataAsync(string connectionstring, string query, List<string> columnNames, DateTime? lastdate);
+        public abstract Task<List<ViewObject>> ReadDataAsync(string connectionstring, string query, List<string> columnNames);
         public async Task<List<string>> GetExsistingTables(string ConnectionString) 
         {
             List<string> tableNames = [];

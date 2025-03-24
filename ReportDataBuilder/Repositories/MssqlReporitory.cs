@@ -26,7 +26,7 @@ namespace ReportDataBuilder.Repositories
             return Returnable;
         }
 
-        public override async Task<List<ViewObject>> ReadDataAsync(string connectionstring, string query, List<string> columnNames, DateTime? lastdate)
+        public override async Task<List<ViewObject>> ReadDataAsync(string connectionstring, string query, List<string> columnNames)
         {
             using SqlConnection connection = new(connectionstring);
             SqlCommand command = new(query, connection);
