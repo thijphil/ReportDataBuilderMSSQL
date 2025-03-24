@@ -5,121 +5,103 @@ using System.Data;
 
 namespace ReportDataBuilder.Repositories
 {
-    public class MysqlRepository : Reporitory
+    public class MysqlRepository : Repository
     {
-        public override List<string> GetDatabases(string connectionstring)
+        public override async Task<List<string>> GetDatabasesAsync(string connectionstring)
         {
-
-            using (MySqlConnection connection = new MySqlConnection(connectionstring))
+            using MySqlConnection connection = new(connectionstring);
+            try
             {
-                try
+                await connection.OpenAsync();
+                MySqlCommand command = new("SHOW DATABASES;", connection);
+                var databases = new List<string>();
+                using MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync();
+                while (reader.Read())
                 {
-                    connection.Open();
+                    string name = reader.GetString("Database");
+                    if (name.Equals("information_schema"))
+                        continue;
+                    if (name.Equals("performance_schema"))
+                        continue;
+                    if (name.Equals("sys"))
+                        continue;
+                    if (name.Equals("mysql"))
+                        continue;
+                    if (name.Equals("mydb"))
+                        continue;
 
-                    MySqlCommand command = new MySqlCommand("SHOW DATABASES;", connection);
-
-                    var databases = new List<string>();
-
-                    using (MySqlDataReader reader = command.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            string name = reader.GetString("Database");
-                            if (name.Equals("information_schema"))
-                                continue;
-                            if (name.Equals("performance_schema"))
-                                continue;
-                            if (name.Equals("sys"))
-                                continue;
-                            if (name.Equals("mysql"))
-                                continue;
-                            if (name.Equals("mydb"))
-                                continue;
-
-                            databases.Add(name);
-                        }
-                        return databases;
-                    }
+                    databases.Add(name);
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("Error: " + ex.Message);
-                    if (ex.StackTrace != null)
-                        Console.WriteLine(ex.StackTrace);
-                }
+                return databases;
             }
-            return new List<string>();
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex.Message);
+                if (ex.StackTrace != null)
+                    Console.WriteLine(ex.StackTrace);
+            }
+            return [];
         }
-        public override List<ViewObject> ReadData(string connectionstring, string query, List<string> columnNames, DateTime? lastdate)
+        public override async Task<List<ViewObject>> ReadDataAsync(string connectionstring, string query, List<string> columnNames, DateTime? lastdate)
         {
-            using (MySqlConnection connection = new MySqlConnection(connectionstring))
+            using MySqlConnection connection = new(connectionstring);
+            try
             {
-                try
+                await connection.OpenAsync();
+                MySqlCommand command = new(query, connection)
                 {
-                    connection.Open();
-
-                    MySqlCommand command = new MySqlCommand(query, connection);
-                    command.CommandTimeout = 3600;
-                    if(lastdate != null)
-                        command.Parameters.Add(new MySqlParameter("@datetime", lastdate));
-                    else
-                        command.Parameters.Add(new MySqlParameter("@datetime", DateTime.MinValue));
-                    using (MySqlDataReader reader = command.ExecuteReader())
+                    CommandTimeout = 3600
+                };
+                if (lastdate != null)
+                    command.Parameters.Add(new MySqlParameter("@datetime", lastdate));
+                else
+                    command.Parameters.Add(new MySqlParameter("@datetime", DateTime.MinValue));
+                using MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync();
+                List<ViewObject> objects = [];
+                while (reader.Read())
+                {
+                    ViewObject vo = new();
+                    foreach (var column in columnNames)
                     {
-                        List<ViewObject> objects = new List<ViewObject>();
-                        while (reader.Read())
-                        {
-                            ViewObject vo = new ViewObject();
-                            foreach (var column in columnNames)
-                            {
-                                vo.paras.Add(column, new ParamValue(reader.GetFieldType(reader.GetOrdinal(column)).ToString(), reader.GetValue(reader.GetOrdinal(column)).ToString()));
-                            }
-                            objects.Add(vo);
-                        }
-                        reader.Close();
-                        return objects;
+                        vo.paras.Add(column, new ParamValue(reader.GetFieldType(reader.GetOrdinal(column)).ToString(), reader.GetValue(reader.GetOrdinal(column)).ToString() ?? ""));
                     }
+                    objects.Add(vo);
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("Error: " + ex.Message);
-                    if (ex.StackTrace != null)
-                        Console.WriteLine(ex.StackTrace);
-                }
+                await reader.CloseAsync();
+                return objects;
             }
-            return new List<ViewObject>();
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex.Message);
+                if (ex.StackTrace != null)
+                    Console.WriteLine(ex.StackTrace);
+            }
+            return [];
         }
-        public override List<string> GetNames(string connectionstring, string query, string column)
+        public override async Task<List<string>> GetNamesAsync(string connectionstring, string query, string column)
         {
 
-            using (MySqlConnection connection = new MySqlConnection(connectionstring))
+            using MySqlConnection connection = new(connectionstring);
+            try
             {
-                try
+                await connection.OpenAsync();
+                MySqlCommand command = new(query, connection);
+                List<string> views = [];
+                using MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
                 {
-                    connection.Open();
-
-                    MySqlCommand command = new MySqlCommand(query, connection);
-
-                    var views = new List<string>();
-
-                    using (MySqlDataReader reader = command.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            string name = reader.GetString(column);
-                            views.Add(name);
-                        }
-                        return views;
-                    }
+                    string name = reader.GetString(column);
+                    views.Add(name);
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("Error: " + ex.Message);
-                    if (ex.StackTrace != null)
-                        Console.WriteLine(ex.StackTrace);
-                }
+                return views;
             }
-            return new List<string>();
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex.Message);
+                if (ex.StackTrace != null)
+                    Console.WriteLine(ex.StackTrace);
+            }
+            return [];
         }           
     }
 }

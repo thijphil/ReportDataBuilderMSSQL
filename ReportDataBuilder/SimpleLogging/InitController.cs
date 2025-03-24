@@ -7,17 +7,8 @@ using System.Threading.Tasks;
 
 namespace ReportDataBuilder.SimpleLogging
 {
-    public class InitController
+    public class InitController(string ConnectionString)
     {
-
-        private string ConnectionString;
-
-        public InitController(string ConnectionString)
-        {
-            this.ConnectionString = ConnectionString;
-
-        }
-
         public void Init()
         {
             CheckOrCreateTableExists();
@@ -28,60 +19,54 @@ namespace ReportDataBuilder.SimpleLogging
 
             var database = ConnectionString.Split("Database=")[1].Split(";")[0];
 
-            using (MySqlConnection connection = new MySqlConnection(ConnectionString))
+            using MySqlConnection connection = new(ConnectionString);
+            string comm = QueryBuilder.CheckTableExisits(database);
+
+            MySqlCommand command = new(comm, connection);
+            connection.Open();
+            MySqlDataReader reader = command.ExecuteReader();
+            bool timeTableExisits = false;
+            bool errorTableExisits = false;
+            try
             {
-                string comm = QueryBuilder.CheckTableExisits(database);
-
-                MySqlCommand command = new MySqlCommand(comm, connection);
-                connection.Open();
-                MySqlDataReader reader = command.ExecuteReader();
-                bool timeTableExisits = false;
-                bool errorTableExisits = false;
-                try
+                while (reader.Read())
                 {
-                    while (reader.Read())
+                    string tablename = reader["TABLE_NAME"].ToString() ?? "";
+                    if (tablename.ToLower().Equals("applicationlog"))
                     {
-                        var tablename = reader["TABLE_NAME"].ToString();
-                        if (tablename.ToLower().Equals("applicationlog"))
-                        {
-                            timeTableExisits = true;
-                        }
-                        if (tablename.ToLower().Equals("errorlog"))
-                        {
-                            errorTableExisits = true;
-                        }
+                        timeTableExisits = true;
                     }
-                    reader.Close();
+                    if (tablename.ToLower().Equals("errorlog"))
+                    {
+                        errorTableExisits = true;
+                    }
                 }
-                finally
-                {
-                    reader.Close();
-                }
-
-                if (!timeTableExisits)
-                    CreateTimeLogTable();
-
-                if (!errorTableExisits)
-                    CreateErrorLogTable();
+                reader.Close();
             }
+            finally
+            {
+                reader.Close();
+            }
+
+            if (!timeTableExisits)
+                CreateTimeLogTable();
+
+            if (!errorTableExisits)
+                CreateErrorLogTable();
         }
         private void CreateErrorLogTable()
         {
-            using (MySqlConnection connection = new MySqlConnection(ConnectionString))
-            {
-                MySqlCommand command = new MySqlCommand(QueryBuilder.CreateErrorTable(), connection);
-                connection.Open();
-                command.ExecuteNonQuery();
-            }
+            using MySqlConnection connection = new(ConnectionString);
+            MySqlCommand command = new(QueryBuilder.CreateErrorTable(), connection);
+            connection.Open();
+            command.ExecuteNonQuery();
         }
         private void CreateTimeLogTable()
         {
-            using (MySqlConnection connection = new MySqlConnection(ConnectionString))
-            {
-                MySqlCommand command = new MySqlCommand(QueryBuilder.CreateTimeTable(), connection);
-                connection.Open();
-                command.ExecuteNonQuery();
-            }
+            using MySqlConnection connection = new(ConnectionString);
+            MySqlCommand command = new(QueryBuilder.CreateTimeTable(), connection);
+            connection.Open();
+            command.ExecuteNonQuery();
         }
     }
 }

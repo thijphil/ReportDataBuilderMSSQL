@@ -1,33 +1,22 @@
-﻿using MySql.Data.MySqlClient;
-using MySqlX.XDevAPI.CRUD;
-using ReportDataBuilder.JsonSettings;
-using ReportDataBuilder.objects;
-using ReportDataBuilder.Repositories;
-using ReportDataBuilder.SimpleLogging.Logger;
+﻿using ReportDataBuilder.Repositories;
 using ReportDataBuilder.StringOperations;
-using System.Xml;
-using ILogger = ReportDataBuilder.SimpleLogging.Logger.ILogger;
 
 namespace ReportDataBuilder.Controllers
 {
-    public class MssqlController : Controller
+    public class MssqlController(IConfiguration configuration) : Controller
     {
-        private IRepository repository;
-        //private ILogger logger;
-        public MssqlController()
-        {
-            //logger = new Logger(GlobalSettings.settings.LoggingConnectionString, GlobalSettings.settings.AppId);
-            repository = new MssqlReporitory();
-        }
-        public override void BuildData()
+        private readonly MssqlReporitory repository = new();
+        private readonly IConfigurationSection _databaseSettings = configuration.GetSection("DatabaseSettings");
+
+        public override async Task BuildDataAsync()
         {
             Console.SetOut(new CustomTextWriter(Console.Out));
-            string ReceivingDatabaseName = GlobalSettings.settings.ReceivingDatabaseName;
-            string connectionString = GlobalSettings.settings.ConnectionString;
-            List<string> selectedDatabases = GlobalSettings.settings.SelectedDatabases;
-            string receivingConnectionString = $"{GlobalSettings.settings.ReceivingConnectionString}Database={ReceivingDatabaseName};";
+            string ReceivingDatabaseName = _databaseSettings["ReceivingDatabaseName"] ?? "";
+            string connectionString = _databaseSettings["ConnectionString"] ?? "";
+            List<string> selectedDatabases = _databaseSettings.GetSection("SelectedDatabases").Get<List<string>>() ?? [];
+            string receivingConnectionString = $"{_databaseSettings["ReceivingConnectionString"]}Database={ReceivingDatabaseName};";
             //logger.LogInfo("Fetching Databases");
-            var existingDatabases = repository.GetDatabases(connectionString);
+            var existingDatabases = await repository.GetDatabasesAsync(connectionString);
             //logger.LogInfo($"Found {existingDatabases.Count} Databases");
             List<string> databases = [];
             //logger.LogInfo("Checking if selected databases exist");
@@ -39,12 +28,12 @@ namespace ReportDataBuilder.Controllers
 
             foreach (var database in databases)
             {
-                List<string> AllItems = new List<string>();
+                List<string> AllItems = [];
                 string tempConnectionString = $"{connectionString}Database={database};";
                 //string viewsQuery = $"SELECT name FROM sys.views;";
                 //var views = repository.GetNames(tempConnectionString, viewsQuery, $"name");
                 string tablesQuery = $"SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES;";
-                var tables = repository.GetNames(tempConnectionString, tablesQuery, $"TABLE_NAME");
+                var tables = await repository.GetNamesAsync(tempConnectionString, tablesQuery, $"TABLE_NAME");
 
                 //AllItems.AddRange(views);
                 AllItems.AddRange(tables);
@@ -54,7 +43,7 @@ namespace ReportDataBuilder.Controllers
                 foreach (var view in AllItems)
                 {
                     string tablename = StringBuilder.CreateTableName(view);
-                    if (repository.CheckTableExists(receivingConnectionString, tablename, ReceivingDatabaseName))
+                    if (await repository.CheckTableExistsAsync(receivingConnectionString, tablename, ReceivingDatabaseName))
                     {
                         Console.WriteLine($"{tablename} : {view}");
                         items.Add(view);
@@ -64,20 +53,20 @@ namespace ReportDataBuilder.Controllers
                 foreach (var view in items)
                 {
                     string tablename = StringBuilder.CreateTableName(view);
-                    if (!repository.CheckTableExists(receivingConnectionString, tablename, ReceivingDatabaseName))
+                    if (!await repository.CheckTableExistsAsync(receivingConnectionString, tablename, ReceivingDatabaseName))
                         continue;
                     //var id = logger.LogStart(tablename, 0);
                     try
                     {
 
                         var viewColumnNameQuery = $"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '{view}' and TABLE_CATALOG = '{database}';";
-                        var columnsNames = repository.GetNames(tempConnectionString, viewColumnNameQuery, "COLUMN_NAME");
+                        var columnsNames = await repository.GetNamesAsync(tempConnectionString, viewColumnNameQuery, "COLUMN_NAME");
                         string FilterCol = HasFilter(columnsNames) ? "CreatedDatetimeFilter" : "CreatedDatetime";
                         //logger.LogInfo("Truncating data");
                         //repository.TruncateData(receivingConnectionString, tablename);
 
                         //logger.LogInfo($"Fetching latest datetime from {tablename}");
-                        var lastDate = repository.GetLatestDateTime(receivingConnectionString, tablename, FilterCol);
+                        var lastDate = await repository.GetLatestDateTimeAsync(receivingConnectionString, tablename, FilterCol);
                         //logger.LogInfo($"Creating Query");
                         //var readDataQuery = $"select {StringBuilder.CreateColumnListMsSql(columnsNames)} from {view} where ViewDate > @datetime";
                         var readDataQuery = "";
@@ -90,9 +79,9 @@ namespace ReportDataBuilder.Controllers
                             readDataQuery = $"select {StringBuilder.CreateColumnListMsSql(columnsNames)} from {view} where {FilterCol} > '{lastDate}'";
                         }
                        // logger.LogInfo("Fetching data from view");
-                        var objects = repository.ReadData(tempConnectionString, readDataQuery, columnsNames, lastDate);
+                        var objects = await repository.ReadDataAsync(tempConnectionString, readDataQuery, columnsNames, lastDate);
                         //logger.LogInfo("Writing data to table");
-                        repository.WriteData(receivingConnectionString, tablename, objects);
+                        await repository.WriteDataAsync(receivingConnectionString, tablename, objects);
                         //logger.LogStop(id);
                     }
                     catch (Exception ex)

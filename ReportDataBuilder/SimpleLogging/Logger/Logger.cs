@@ -5,11 +5,11 @@ namespace ReportDataBuilder.SimpleLogging.Logger
 {
     public class Logger : ILogger
     {
-        private ILogRepository logRepository;
+        private readonly LogRepository logRepository;
         public Logger(string ConnectionString, string ApplicationName)
         {
             logRepository = new LogRepository(ConnectionString, ApplicationName);
-            InitController initController = new InitController(ConnectionString);
+            InitController initController = new(ConnectionString);
             initController.Init();
             AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionEventHandler;
             AppDomain.CurrentDomain.FirstChanceException += FirstChanceExceptionEventHandler;
@@ -19,7 +19,7 @@ namespace ReportDataBuilder.SimpleLogging.Logger
             if (e.IsTerminating)
                 LogFatal((Exception)e.ExceptionObject);
         }
-        private void FirstChanceExceptionEventHandler(object sender, FirstChanceExceptionEventArgs e)
+        private void FirstChanceExceptionEventHandler(object? sender, FirstChanceExceptionEventArgs e)
         {
             LogError(e.Exception);
         }
@@ -92,7 +92,7 @@ namespace ReportDataBuilder.SimpleLogging.Logger
         {
             logRepository.Log("Debug", MakeLogMessage(Messages));
         }
-        private string MakeLogMessage(string[] messages)
+        private static string MakeLogMessage(string[] messages)
         {
             string message = string.Empty;
             foreach (var messageItem in messages)

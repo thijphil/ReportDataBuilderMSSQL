@@ -8,7 +8,7 @@ namespace ReportDataBuilder.Controllers
 {
     public abstract class Controller : IController
     {
-        public abstract void BuildData();
-        public bool HasFilter(List<string> columnNames) => columnNames.Contains("CreatedDatetimeFilter");
+        public abstract Task BuildDataAsync();
+        public static bool HasFilter(List<string> columnNames) => columnNames.Contains("CreatedDatetimeFilter");
     }
 }

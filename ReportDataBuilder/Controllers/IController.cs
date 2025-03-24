@@ -8,6 +8,6 @@ namespace ReportDataBuilder.Controllers
 {
     public interface IController
     {
-        void BuildData();
+        Task BuildDataAsync();
     }
 }

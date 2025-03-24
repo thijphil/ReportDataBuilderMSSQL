@@ -27,5 +27,6 @@ namespace ReportDataBuilder.SimpleLogging.Logger
         void LogWarn(string Message);
         long LogStart(string Office, int Token);
         void LogStop(long id);
+
     }
 }

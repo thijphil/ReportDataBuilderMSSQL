@@ -1,9 +1,0 @@
-{
-  "AppId": "getmore_reporting",
-  "ReceivingDatabaseName": "reporting_getmore",
-  "ConnectionString": "Server=gms-managed-instance.public.f54809694518.database.windows.net,3342;User Id=dbby;Password=y2CTgqNsrZwk-uy*fZ8@mk-6qcEZf!;",
-  "ReceivingConnectionString": "Server=57.129.74.63;Uid=thijmen;Pwd=Zm8qiYFSK2Z9tqlk08K2;",
-  "SelectedDatabases": [
-    "GMS_LIVE_REFACTORED"
-  ]
-}

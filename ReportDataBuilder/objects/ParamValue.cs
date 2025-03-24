@@ -6,19 +6,10 @@ using System.Threading.Tasks;
 
 namespace ReportDataBuilder.objects
 {
-    public class ParamValue
+    public class ParamValue(string type, string value)
     {
-        public string Type { get; set; }
-        public string Value { get; set; }
-        public ParamValue()
-        {
-                
-        }
+        public string Type { get; set; } = type;
+        public string Value { get; set; } = value;
 
-        public ParamValue(string type, string value)
-        {
-            Type = type;
-            Value = value;
-        }
     }
 }
