@@ -1,0 +1,25 @@
+//{
+//  "AppId": "vaekku_reporting",
+//  "ReceivingDatabaseName": "vaekku_reporting",
+//  "ConnectionString": "Server=192.168.69.11;Uid=flip;Pwd=p62uWu2mxGWZpFcT8EB7;",
+//  "SelectedDatabases": [
+//    "brainbay",
+//    "fasterforwardelements",
+//    "fasterforwardelementsnd",
+//    "realworks",
+//    "realworks_bog",
+//    "realworks_newconstruction",
+//    "realworks_wonen",
+//    "yuki"
+//  ]
+//}
+
+{
+  "AppId": "exmor_reporting",
+  "ReceivingDatabaseName": "reporting_exmor",
+  "ConnectionString": "Server=192.168.69.11;Uid=flip;Pwd=p62uWu2mxGWZpFcT8EB7;",
+  "SelectedDatabases": [
+    "fasterforwardelements_exmor",
+    "fasterforwardelementsnd_exmor"
+  ]
+}
