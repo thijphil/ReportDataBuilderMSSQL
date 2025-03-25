@@ -27,7 +27,7 @@ namespace ReportDataBuilder.Repositories
             
             return tableNames;
         }
-        public async Task WriteDataAsync(string connectionstring, string tablename, List<ViewObject> objects)
+        public async Task WriteDataAsync(string connectionstring, string tablename, List<ViewObject> objects, ActionEnum actionEnum)
         {
             using MySqlConnection connection = new(connectionstring);
             await connection.OpenAsync();
@@ -35,6 +35,8 @@ namespace ReportDataBuilder.Repositories
             {
                 try
                 {
+                    item.paras.Add("FetchDate", new ParamValue("System.DateTime", DateTime.Now.ToString()));
+                    item.paras.Add("Action", new ParamValue("System.String", actionEnum.ToString()));
                     string columnNames = StringBuilder.CreateColumnList(item);
                     string columnParams = StringBuilder.CreateColumnParamsList(item);
                     string values = StringBuilder.CreateValueList(item);
@@ -116,6 +118,8 @@ namespace ReportDataBuilder.Repositories
                                 break;
                         }
                     }
+                    //command.Parameters.AddWithValue("FetchDate", DateTime.Now);
+                    //command.Parameters.AddWithValue("Action", actionEnum.ToString());
                     int rowsAffected = await command.ExecuteNonQueryAsync();
                     if (rowsAffected > 0)
                     {

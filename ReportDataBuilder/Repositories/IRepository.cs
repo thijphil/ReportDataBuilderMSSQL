@@ -11,7 +11,7 @@ namespace ReportDataBuilder.Repositories
     {
         Task<List<ViewObject>> ReadDataAsync(string connectionstring, string query, List<string> columnNames);
         Task<List<string>> GetColumnNamesAsync(string connectionstring, string query, string column);
-        Task WriteDataAsync(string connectionstring, string tablename, List<ViewObject> objects);
+        Task WriteDataAsync(string connectionstring, string tablename, List<ViewObject> objects, ActionEnum actionEnum);
         Task TruncateDataAsync(string connectionstring, string tablename);
         Task<DateTime?> GetLatestDateTimeAsync(string connectionstring, string tableName, string filterCol);
         Task<List<string>> GetExsistingTables(string ConnectionString);

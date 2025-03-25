@@ -1,0 +1,6 @@
+services:
+  reportdatabuilder:
+    image: ${DOCKER_REGISTRY-}reportdatabuilder
+    build:
+      context: .
+      dockerfile: ReportDataBuilder/Dockerfile

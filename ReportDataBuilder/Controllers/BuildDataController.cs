@@ -1,4 +1,5 @@
-﻿using ReportDataBuilder.Repositories;
+﻿using ReportDataBuilder.objects;
+using ReportDataBuilder.Repositories;
 using ReportDataBuilder.StringOperations;
 using System.Security.AccessControl;
 using ILogger = ReportDataBuilder.SimpleLogging.Logger.ILogger;
@@ -15,26 +16,9 @@ namespace ReportDataBuilder.Controllers
                 try
                 {
                     var viewColumnNameQuery = $"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '{objectName}' and TABLE_CATALOG = '{SendingDatabaseName}';";
-                    var columnsNames = await Repository.GetColumnNamesAsync(SendingConnectionString, viewColumnNameQuery, "COLUMN_NAME");
-                    
-                    Logger.LogInfo($"Fetching latest datetime from {objectName}");
-                    string CreatedFilterCol = HasCreatedFilter(columnsNames) ? "CreatedDatetimeFilter" : "CreatedDatetime";
-                    var CreatedLastDate = await Repository.GetLatestDateTimeAsync(ReceivingConnectionString, objectName, CreatedFilterCol);
-
-                    Logger.LogInfo($"Creating Query");
-                    string CreatedColNames = StringBuilder.CreateColumnListMsSql(columnsNames);
-                    var CreatedReadDataQuery = CreatedLastDate == null? $"select {CreatedColNames} from {objectName}" : $"select {CreatedColNames} from {objectName} where {CreatedFilterCol} > '{CreatedLastDate}'";
-                    await SyncCreatedRows(CreatedReadDataQuery, columnsNames, objectName);
-
-                    Logger.LogInfo($"Fetching latest datetime from {objectName}");
-                    string UpdatedFilterCol = HasCreatedFilter(columnsNames) ? "UpdateDatetimeFilter" : "UpdateDateTime";
-                    var UpdatedLastDate = DateTime.Now;
-
-                    Logger.LogInfo($"Creating Query");
-                    string UpdatedColNames = StringBuilder.CreateColumnListMsSql(columnsNames);
-                    var UpdatedReadDataQuery = $"select {UpdatedColNames} from {objectName} where {UpdatedFilterCol} > '{UpdatedLastDate}'";
-
-                    await SyncUpdatedRows(UpdatedReadDataQuery, columnsNames, objectName);
+                    var columnsNames = await Repository.GetColumnNamesAsync(SendingConnectionString, viewColumnNameQuery, "COLUMN_NAME");                    
+                    await SyncCreatedRows( columnsNames, objectName);   
+                    await SyncUpdatedRows(columnsNames, objectName);
                     Logger.LogStop(id);
                 }
                 catch (Exception ex)
@@ -46,19 +30,34 @@ namespace ReportDataBuilder.Controllers
             Environment.Exit(0);
         }
 
-        private async Task SyncCreatedRows(string ReadDataQuery, List<string> ColumnsNames, string ObjectName) 
+        private async Task SyncCreatedRows(List<string> ColumnsNames, string ObjectName) 
         {
+            Logger.LogInfo($"Fetching latest datetime from {ObjectName}");
+            string CreatedFilterCol = HasCreatedFilter(ColumnsNames) ? "CreatedDatetimeFilter" : "CreatedDatetime";
+            var CreatedLastDate = await Repository.GetLatestDateTimeAsync(ReceivingConnectionString, ObjectName, CreatedFilterCol);
+
+            Logger.LogInfo($"Creating Query");
+            string CreatedColNames = StringBuilder.CreateColumnListMsSql(ColumnsNames);
+            var CreatedReadDataQuery = CreatedLastDate == null ? $"select {CreatedColNames} from {ObjectName}" : $"select {CreatedColNames} from {ObjectName} where {CreatedFilterCol} > '{CreatedLastDate}'";
             Logger.LogInfo("Fetching data from view");
-            var objects = await Repository.ReadDataAsync(SendingConnectionString, ReadDataQuery, ColumnsNames);
+            var objects = await Repository.ReadDataAsync(SendingConnectionString, CreatedReadDataQuery, ColumnsNames);
             Logger.LogInfo("Writing data to table");
-            await Repository.WriteDataAsync(ReceivingConnectionString, ObjectName, objects);
+            await Repository.WriteDataAsync(ReceivingConnectionString, ObjectName, objects, ActionEnum.Create);
         }
-        private async Task SyncUpdatedRows(string ReadDataQuery, List<string> ColumnsNames, string ObjectName)
+        private async Task SyncUpdatedRows(List<string> ColumnsNames, string ObjectName)
         {
+            Logger.LogInfo($"Fetching latest datetime from {ObjectName}");
+            string UpdatedFilterCol = HasUpdatedFilter(ColumnsNames) ? "UpdatedDatetimeFilter" : "UpdatedDateTime";
+            var UpdatedLastDate = DateTime.Now.Date.AddDays(-10000);
+
+            Logger.LogInfo($"Creating Query");
+            string UpdatedColNames = StringBuilder.CreateColumnListMsSql(ColumnsNames);
+            var UpdatedReadDataQuery = $"select {UpdatedColNames} from {ObjectName} where {UpdatedFilterCol} > '{UpdatedLastDate}'";
+
             Logger.LogInfo("Fetching data from view");
-            var objects = await Repository.ReadDataAsync(SendingConnectionString, ReadDataQuery, ColumnsNames);
+            var objects = await Repository.ReadDataAsync(SendingConnectionString, UpdatedReadDataQuery, ColumnsNames);
             Logger.LogInfo("Writing data to table");
-            await Repository.WriteDataAsync(ReceivingConnectionString, ObjectName, objects);
+            await Repository.WriteDataAsync(ReceivingConnectionString, ObjectName, objects, ActionEnum.Update);
         }
     }
 }
