@@ -19,7 +19,7 @@ namespace ReportDataBuilder.Controllers
                 {
                     var viewColumnNameQuery = $"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '{objectName}' and TABLE_CATALOG = '{SendingDatabaseName}';";
                     var columnsNames = await Repository.GetColumnNamesAsync(SendingConnectionString, viewColumnNameQuery, "COLUMN_NAME");                    
-                    //await SyncCreatedRows( columnsNames, objectName);   
+                    await SyncCreatedRows( columnsNames, objectName);   
                     await SyncUpdatedRows(columnsNames, objectName);
                     Logger.LogStop(id);
                 }
