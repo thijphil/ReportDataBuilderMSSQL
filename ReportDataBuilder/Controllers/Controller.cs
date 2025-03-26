@@ -24,6 +24,7 @@ namespace ReportDataBuilder.Controllers
         }
         public abstract Task BuildDataAsync();
         public static bool HasCreatedFilter(List<string> columnNames) => columnNames.Contains("CreatedDatetimeFilter");
-        public static bool HasUpdatedFilter(List<string> columnNames) => columnNames.Contains("UpdateDatetimeFilter");
+        public static bool HasUpdatedFilter(List<string> columnNames) => columnNames.Contains("UpdatedDatetimeFilter");
+        public static bool HasUpdateFilter(List<string> columnNames) => columnNames.Contains("UpdateDatetimeFilter");
     }
 }

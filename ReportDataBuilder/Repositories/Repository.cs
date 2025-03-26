@@ -28,7 +28,10 @@ namespace ReportDataBuilder.Repositories
             {
                 tableNames.Add(reader.GetString(0));
             }
-            
+
+            tableNames.Remove("applicationlog");
+            tableNames.Remove("errorlog");
+
             return tableNames;
         }
         public async Task WriteDataAsync(string connectionstring, string tablename, List<ViewObject> objects, ActionEnum actionEnum)

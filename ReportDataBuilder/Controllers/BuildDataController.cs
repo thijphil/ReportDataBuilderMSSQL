@@ -10,14 +10,16 @@ namespace ReportDataBuilder.Controllers
     {
         public override async Task BuildDataAsync()
         {
-            foreach (var objectName in await Repository.GetExsistingTables(ReceivingConnectionString, ReceivingDatabaseName))
+            List<string> objectNames = ["vw_AllContacts"];
+            //List<string> objectNames = await Repository.GetExsistingTables(ReceivingConnectionString, ReceivingDatabaseName);
+            foreach (var objectName in objectNames)
             {
                 var id = Logger.LogStart(objectName, 0);
                 try
                 {
                     var viewColumnNameQuery = $"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '{objectName}' and TABLE_CATALOG = '{SendingDatabaseName}';";
                     var columnsNames = await Repository.GetColumnNamesAsync(SendingConnectionString, viewColumnNameQuery, "COLUMN_NAME");                    
-                    await SyncCreatedRows( columnsNames, objectName);   
+                    //await SyncCreatedRows( columnsNames, objectName);   
                     await SyncUpdatedRows(columnsNames, objectName);
                     Logger.LogStop(id);
                 }
@@ -47,7 +49,12 @@ namespace ReportDataBuilder.Controllers
         private async Task SyncUpdatedRows(List<string> ColumnsNames, string ObjectName)
         {
             Logger.LogInfo($"Fetching latest datetime from {ObjectName}");
-            string UpdatedFilterCol = HasUpdatedFilter(ColumnsNames) ? "UpdatedDatetimeFilter" : "UpdatedDateTime";
+            string UpdatedFilterCol = "";
+            if (HasUpdatedFilter(ColumnsNames))
+                UpdatedFilterCol = "UpdatedDatetimeFilter";
+            else
+                UpdatedFilterCol = HasUpdateFilter(ColumnsNames) ? "UpdateDatetimeFilter" : "UpdatedDateTime";
+
 
             var UpdatedLastDate = await Repository.GetLatestDateTimeAsync(ReceivingConnectionString, ObjectName, UpdatedFilterCol);
 
