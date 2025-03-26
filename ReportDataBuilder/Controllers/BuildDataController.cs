@@ -10,8 +10,7 @@ namespace ReportDataBuilder.Controllers
     {
         public override async Task BuildDataAsync()
         {
-            List<string> objectNames = ["vw_AllContacts"];
-            //List<string> objectNames = await Repository.GetExsistingTables(ReceivingConnectionString, ReceivingDatabaseName);
+            List<string> objectNames = await Repository.GetExsistingTables(ReceivingConnectionString, ReceivingDatabaseName);
             foreach (var objectName in objectNames)
             {
                 var id = Logger.LogStart(objectName, 0);
