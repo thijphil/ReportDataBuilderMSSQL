@@ -64,6 +64,18 @@ namespace ReportDataBuilder.SimpleLogging.Logger
         {
             logRepository.Log("Info", Message);
         }
+        public void LogConsole(Exception ex) 
+        {
+            Console.WriteLine(ex);
+        }
+        public void LogConsole(string Message) 
+        {
+            Console.WriteLine($"{Message}");
+        }
+        public void LogConsole(string[] Messages) 
+        {
+            Console.WriteLine(Messages);
+        }
         public void LogTrace(string Message)
         {
             logRepository.Log("Trace", Message);

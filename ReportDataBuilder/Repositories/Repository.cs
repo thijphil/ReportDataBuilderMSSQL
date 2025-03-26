@@ -123,11 +123,11 @@ namespace ReportDataBuilder.Repositories
                     int rowsAffected = await command.ExecuteNonQueryAsync();
                     if (rowsAffected > 0)
                     {
-                        Logger.LogInfo("Data inserted successfully!");
+                        Logger.LogConsole($"Data inserted successfully into {tablename}!");
                     }
                     else
                     {
-                        Logger.LogInfo("No data inserted!");
+                        Logger.LogConsole($"No data inserted into {tablename}!");
                     }
                 }
                 catch (Exception ex)

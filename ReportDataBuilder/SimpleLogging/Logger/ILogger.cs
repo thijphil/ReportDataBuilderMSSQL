@@ -20,6 +20,9 @@ namespace ReportDataBuilder.SimpleLogging.Logger
         void LogInfo(Exception ex);
         void LogInfo(string Message);
         void LogInfo(string[] Messages);
+        void LogConsole(Exception ex);
+        void LogConsole(string Message);
+        void LogConsole(string[] Messages);
         void LogTrace(Exception ex);
         void LogTrace(string Message);
         void LogTrace(string[] Messages);
