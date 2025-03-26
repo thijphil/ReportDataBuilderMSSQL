@@ -162,14 +162,14 @@ namespace ReportDataBuilder.Repositories
             }
         }
 
-        public virtual async Task<DateTime?> GetLatestDateTimeAsync(string connectionstring, string tableName, string filterCol)
+        public virtual async Task<DateTime?> GetLatestDateTimeAsync(string connectionstring, string tableName, string filterCol, ActionEnum actionEnum)
         {
             using MySqlConnection connection = new(connectionstring);
             try
             {
                 await connection.OpenAsync();
 
-                using var command = new MySqlCommand($"SELECT MAX({filterCol}) as DatetimeFilter FROM {tableName}", connection);
+                using var command = new MySqlCommand($"SELECT MAX({filterCol}) as DatetimeFilter FROM {tableName} WHERE Action = '{actionEnum.ToString()}'", connection);
                 using var reader = await command.ExecuteReaderAsync();
                 while (await reader.ReadAsync())
                 {

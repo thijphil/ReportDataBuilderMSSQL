@@ -35,7 +35,7 @@ namespace ReportDataBuilder.Controllers
         {
             Logger.LogInfo($"Fetching latest datetime from {ObjectName}");
             string CreatedFilterCol = HasCreatedFilter(ColumnsNames) ? "CreatedDatetimeFilter" : "CreatedDatetime";
-            var CreatedLastDate = await Repository.GetLatestDateTimeAsync(ReceivingConnectionString, ObjectName, CreatedFilterCol);
+            var CreatedLastDate = await Repository.GetLatestDateTimeAsync(ReceivingConnectionString, ObjectName, CreatedFilterCol, ActionEnum.Create);
 
             Logger.LogInfo($"Creating Query");
             string CreatedColNames = StringBuilder.CreateColumnListMsSql(ColumnsNames);
@@ -55,7 +55,7 @@ namespace ReportDataBuilder.Controllers
                 UpdatedFilterCol = HasUpdateFilter(ColumnsNames) ? "UpdateDatetimeFilter" : "UpdatedDateTime";
 
 
-            var UpdatedLastDate = await Repository.GetLatestDateTimeAsync(ReceivingConnectionString, ObjectName, UpdatedFilterCol);
+            var UpdatedLastDate = await Repository.GetLatestDateTimeAsync(ReceivingConnectionString, ObjectName, UpdatedFilterCol, ActionEnum.Update);
 
             //var UpdatedLastDate = DateTime.Now.Date.AddDays(-10000);
 
