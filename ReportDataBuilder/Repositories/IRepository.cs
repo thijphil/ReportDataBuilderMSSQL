@@ -14,6 +14,6 @@ namespace ReportDataBuilder.Repositories
         Task WriteDataAsync(string connectionstring, string tablename, List<ViewObject> objects, ActionEnum actionEnum);
         Task TruncateDataAsync(string connectionstring, string tablename);
         Task<DateTime?> GetLatestDateTimeAsync(string connectionstring, string tableName, string filterCol);
-        Task<List<string>> GetExsistingTables(string ConnectionString);
+        Task<List<string>> GetExsistingTables(string ConnectionString, string receivingDatabaseName);
     }
 }

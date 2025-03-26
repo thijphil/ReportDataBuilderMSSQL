@@ -11,12 +11,16 @@ namespace ReportDataBuilder.Repositories
         public required ILogger Logger { get; set; }
         public abstract Task<List<string>> GetColumnNamesAsync(string connectionstring, string query, string column);
         public abstract Task<List<ViewObject>> ReadDataAsync(string connectionstring, string query, List<string> columnNames);
-        public async Task<List<string>> GetExsistingTables(string ConnectionString) 
+        public async Task<List<string>> GetExsistingTables(string ConnectionString, string receivingDatabaseName) 
         {
             List<string> tableNames = [];
             using MySqlConnection connection = new(ConnectionString);
             await connection.OpenAsync();
-            string query = "SHOW TABLES";
+            string query = "SELECT table_name " +
+                "FROM information_schema.tables " +
+               $"WHERE table_schema IN ('{receivingDatabaseName}') " +
+                "and Table_Type = 'BASE TABLE' " +
+                "order by table_name;";
             MySqlCommand command = new(query, connection);
 
             using MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync();
@@ -162,22 +166,22 @@ namespace ReportDataBuilder.Repositories
             {
                 await connection.OpenAsync();
 
-                using var command = new MySqlCommand($"SELECT MAX({filterCol}) as CreatedDatetimeFilter FROM {tableName}", connection);
+                using var command = new MySqlCommand($"SELECT MAX({filterCol}) as DatetimeFilter FROM {tableName}", connection);
                 using var reader = await command.ExecuteReaderAsync();
                 while (await reader.ReadAsync())
                 {
                     try
                     {
-                        if (string.IsNullOrEmpty(reader.GetValue("CreatedDatetimeFilter").ToString()))
+                        if (string.IsNullOrEmpty(reader.GetValue("DatetimeFilter").ToString()))
                             return null;
-                        DateTime lastdate = reader.GetDateTime("CreatedDatetimeFilter");
+                        DateTime lastdate = reader.GetDateTime("DatetimeFilter");
                         return lastdate;
                     }
                     catch
                     {
-                        if (string.IsNullOrEmpty(reader.GetValue("CreatedDatetimeFilter").ToString()))
+                        if (string.IsNullOrEmpty(reader.GetValue("DatetimeFilter").ToString()))
                             return null;
-                        string dateString = reader.GetString("CreatedDatetimeFilter");
+                        string dateString = reader.GetString("DatetimeFilter");
                         DateTime date = DateTime.ParseExact(dateString, "dd-MM-yyyy", null);
                         return date;
                     }

@@ -10,7 +10,7 @@ namespace ReportDataBuilder.Controllers
     {
         public override async Task BuildDataAsync()
         {
-            foreach (var objectName in await Repository.GetExsistingTables(ReceivingConnectionString))
+            foreach (var objectName in await Repository.GetExsistingTables(ReceivingConnectionString, ReceivingDatabaseName))
             {
                 var id = Logger.LogStart(objectName, 0);
                 try
@@ -48,7 +48,10 @@ namespace ReportDataBuilder.Controllers
         {
             Logger.LogInfo($"Fetching latest datetime from {ObjectName}");
             string UpdatedFilterCol = HasUpdatedFilter(ColumnsNames) ? "UpdatedDatetimeFilter" : "UpdatedDateTime";
-            var UpdatedLastDate = DateTime.Now.Date.AddDays(-10000);
+
+            var UpdatedLastDate = await Repository.GetLatestDateTimeAsync(ReceivingConnectionString, ObjectName, UpdatedFilterCol);
+
+            //var UpdatedLastDate = DateTime.Now.Date.AddDays(-10000);
 
             Logger.LogInfo($"Creating Query");
             string UpdatedColNames = StringBuilder.CreateColumnListMsSql(ColumnsNames);
